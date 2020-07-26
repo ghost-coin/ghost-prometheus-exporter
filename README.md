@@ -1,12 +1,12 @@
-# Bitcoin Core Prometheus Exporter
+# Ghost Core Prometheus Exporter
 
-A [Prometheus] exporter for [Bitcoin Core] nodes written in python and packaged for running as a container.
+A [Prometheus] exporter for [Ghost Core] nodes written in python and packaged for running as a container.
 
-A rudimentary Grafana [dashboard] is available in the [`dashboard/bitcoin-grafana.json`](dashboard/bitcoin-grafana.json)
+A rudimentary Grafana [dashboard] is available in the [`dashboard/ghost-grafana.json`](dashboard/ghost-grafana.json)
 file.
 
 The main script is a modified version of [`bitcoin-monitor.py`][source-gist], updated to remove the need for the
-`bitcoin-cli` binary, packaged into a [Docker image][docker-image], and expanded to export additional metrics.
+`ghost-cli` binary, packaged into a [Docker image][docker-image], and expanded to export additional metrics.
 
 [Ghost Core]: https://github.com/ghost-coin/ghost-core
 [Prometheus]: https://github.com/prometheus/prometheus
