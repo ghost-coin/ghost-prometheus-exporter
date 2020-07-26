@@ -88,6 +88,10 @@ BITCOIN_LATEST_BLOCK_TXS = Gauge(
     "bitcoin_latest_block_txs", "Number of transactions in latest block"
 )
 
+BITCOIN_LATEST_STAKE_REWARD = Gauge(
+    "bitcoin_latest_stake_reward","Stake reward in latest block"
+)
+
 BITCOIN_NUM_CHAINTIPS = Gauge("bitcoin_num_chaintips", "Number of known blockchain branches")
 
 BITCOIN_TOTAL_BYTES_RECV = Gauge("bitcoin_total_bytes_recv", "Total bytes received")
@@ -211,6 +215,13 @@ def get_block(block_hash: str):
         return None
     return block
 
+def get_blockreward(blockheight: int):
+    try:
+        blockrewarddata = bitcoinrpc("getblockreward", blockheight)
+    except Exception:
+        logger.exception("Failed to retrieve blockreward at " + blockheight + " from bitcoind.")
+        return None
+    return blockrewarddata
 
 def smartfee_gauge(num_blocks: int) -> Gauge:
     gauge = BITCOIN_ESTIMATED_SMART_FEE_GAUGES.get(num_blocks)
@@ -234,6 +245,7 @@ def refresh_metrics() -> None:
     uptime = int(bitcoinrpc("uptime"))
     meminfo = bitcoinrpc("getmemoryinfo", "stats")["locked"]
     blockchaininfo = bitcoinrpc("getblockchaininfo")
+    currentheight = blockchaininfo["blocks"]
     networkinfo = bitcoinrpc("getnetworkinfo")
     chaintips = len(bitcoinrpc("getchaintips"))
     mempool = bitcoinrpc("getmempoolinfo")
@@ -256,6 +268,7 @@ def refresh_metrics() -> None:
     BITCOIN_DIFFICULTY.set(blockchaininfo["difficulty"])
     BITCOIN_NETWORK_STAKEWEIGHT.set(netstakeweight)
     stakeperc = (netstakeweight / moneysupply * 100)
+    BITCOIN_LATEST_STAKE_REWARD.set(get_blockreward(currentheight)["blockreward"])
     BITCOIN_NETSTAKE_PERC.set(stakeperc)
     BITCOIN_HASHPS.set(hashps_120)
     BITCOIN_HASHPS_NEG1.set(hashps_neg1)
