@@ -11,7 +11,7 @@ services:
       - ./test-bitcoin.conf:/etc/bitcoin/bitcoin.conf
 
   exporter:
-    image: jvstein/bitcoin-prometheus-exporter:latest
+    image: jvstein/ghost-prometheus-exporter:latest
     build: .
     ports:
       - "8334:8334"

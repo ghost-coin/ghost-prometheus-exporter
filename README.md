@@ -8,9 +8,9 @@ file.
 The main script is a modified version of [`bitcoin-monitor.py`][source-gist], updated to remove the need for the
 `bitcoin-cli` binary, packaged into a [Docker image][docker-image], and expanded to export additional metrics.
 
-[Bitcoin Core]: https://github.com/bitcoin/bitcoin
+[Ghost Core]: https://github.com/ghost-coin/ghost-core
 [Prometheus]: https://github.com/prometheus/prometheus
-[docker-image]: https://hub.docker.com/r/jvstein/bitcoin-prometheus-exporter
+[docker-image]: https://hub.docker.com/r/ghost-coin/ghost-prometheus-exporter
 
 [source-gist]: https://gist.github.com/ageis/a0623ae6ec9cfc72e5cb6bde5754ab1f
 [python-bitcoinlib]: https://github.com/petertodd/python-bitcoinlib
@@ -24,7 +24,7 @@ docker run \
     -e BITCOIN_RPC_HOST=bitcoin-node \
     -e BITCOIN_RPC_USER=alice \
     -e BITCOIN_RPC_PASSWORD=DONT_USE_THIS_YOU_WILL_GET_ROBBED_8ak1gI25KFTvjovL3gAM967mies3E= \
-    jvstein/bitcoin-prometheus-exporter:v0.5.0
+    jvstein/ghost-prometheus-exporter:v0.5.0
 ```
 
 ## Basic Testing

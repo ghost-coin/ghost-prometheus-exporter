@@ -1,7 +1,7 @@
 FROM python:3.8-alpine
 
-LABEL org.opencontainers.image.title "bitcoin-prometheus-exporter"
-LABEL org.opencontainers.image.description "Prometheus exporter for bitcoin nodes"
+LABEL org.opencontainers.image.title "ghost-prometheus-exporter"
+LABEL org.opencontainers.image.description "Prometheus exporter for ghost nodes"
 
 # Dependencies for python-bitcoinlib and sanity check.
 RUN apk --no-cache add binutils openssl-dev && \

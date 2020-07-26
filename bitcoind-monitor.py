@@ -7,6 +7,7 @@
 # Copyright 2019,2020 Jeff Stein
 #
 # Published at https://github.com/jvstein/bitcoin-prometheus-exporter
+# Modified for GHOST at https://github.com/ghost-coin/ghost-prometheus-exporter
 # Licensed under BSD 3-clause (see LICENSE).
 #
 # Dependency licenses (retrieved 2020-05-31):
@@ -21,7 +22,7 @@ import os
 import signal
 import sys
 import socket
-
+import decimal
 from datetime import datetime
 from functools import lru_cache
 from typing import Any
@@ -43,6 +44,11 @@ logger = logging.getLogger("bitcoin-exporter")
 BITCOIN_BLOCKS = Gauge("bitcoin_blocks", "Block height")
 BITCOIN_DIFFICULTY = Gauge("bitcoin_difficulty", "Difficulty")
 BITCOIN_PEERS = Gauge("bitcoin_peers", "Number of peers")
+BITCOIN_SUPPLY = Gauge("bitcoin_supply", "Supply of GHOST")
+BITCOIN_UTXOS = Gauge("bitcoin_utxos", "Total utxos")
+BITCOIN_UTXOS_BLINDED = Gauge("bitcoin_utxos_blinded", "Total blinded utxos")
+BITCOIN_NETWORK_STAKEWEIGHT = Gauge("bitcoin_network_stakeweight", "Total network stakeweight")
+BITCOIN_NETSTAKE_PERC = Gauge("bitcoin_netstake_perc","Percent of total supply staking")
 BITCOIN_HASHPS_NEG1 = Gauge(
     "bitcoin_hashps_neg1", "Estimated network hash rate per second since the last difficulty change"
 )
@@ -123,12 +129,12 @@ PROCESS_TIME = Counter(
 
 BITCOIN_RPC_SCHEME = os.environ.get("BITCOIN_RPC_SCHEME", "http")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
-BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
-BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER")
-BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD")
+BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "51725")
+BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER","user")
+BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD","pass")
 BITCOIN_CONF_PATH = os.environ.get("BITCOIN_CONF_PATH")
 SMART_FEES = [int(f) for f in os.environ.get("SMARTFEE_BLOCKS", "2,3,5,20").split(",")]
-REFRESH_SECONDS = float(os.environ.get("REFRESH_SECONDS", "300"))
+REFRESH_SECONDS = float(os.environ.get("REFRESH_SECONDS", "60"))
 METRICS_ADDR = os.environ.get("METRICS_ADDR", "")  # empty = any address
 METRICS_PORT = int(os.environ.get("METRICS_PORT", "8334"))
 RETRIES = int(os.environ.get("RETRIES", 5))
@@ -236,13 +242,21 @@ def refresh_metrics() -> None:
     hashps_120 = float(bitcoinrpc("getnetworkhashps", 120))  # 120 is the default
     hashps_neg1 = float(bitcoinrpc("getnetworkhashps", -1))
     hashps_1 = float(bitcoinrpc("getnetworkhashps", 1))
-
+    txoutsetinfo = bitcoinrpc("gettxoutsetinfo")
+    stakinginfo = bitcoinrpc("getstakinginfo")
     banned = bitcoinrpc("listbanned")
-
+    netstakeweight = decimal.Decimal(stakinginfo["netstakeweight"] / 100000000)
+    moneysupply = decimal.Decimal(blockchaininfo["moneysupply"])
     BITCOIN_UPTIME.set(uptime)
     BITCOIN_BLOCKS.set(blockchaininfo["blocks"])
     BITCOIN_PEERS.set(networkinfo["connections"])
+    BITCOIN_SUPPLY.set(moneysupply)
+    BITCOIN_UTXOS.set(txoutsetinfo["txouts"])
+    BITCOIN_UTXOS_BLINDED.set(txoutsetinfo["txouts_blinded"])
     BITCOIN_DIFFICULTY.set(blockchaininfo["difficulty"])
+    BITCOIN_NETWORK_STAKEWEIGHT.set(netstakeweight)
+    stakeperc = (netstakeweight / moneysupply * 100)
+    BITCOIN_NETSTAKE_PERC.set(stakeperc)
     BITCOIN_HASHPS.set(hashps_120)
     BITCOIN_HASHPS_NEG1.set(hashps_neg1)
     BITCOIN_HASHPS_1.set(hashps_1)
@@ -293,7 +307,7 @@ def refresh_metrics() -> None:
             inputs += i
             o = len(tx["vout"])
             outputs += o
-            value += sum(o["value"] for o in tx["vout"])
+            value += sum(o["value"] for o in tx["vout"] if o["type"] != "data" and "value" in o)
 
         BITCOIN_LATEST_BLOCK_INPUTS.set(inputs)
         BITCOIN_LATEST_BLOCK_OUTPUTS.set(outputs)
